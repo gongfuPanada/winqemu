@@ -14,13 +14,24 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
  */
+
+/*
+ * WinQEMU GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL is available it will apply instead, WinQEMU elects to use only the 
+ * General Public License version 3 (GPLv3) at this time for any software where a choice of 
+ * GPL license versions is made available with the language indicating that GPLv3 or any later
+ * version may be used, or where a choice of which version of the GPL is applied is otherwise unspecified.
+ * 
+ * Please contact Yan Wen (celestialwy@gmail.com) if you need additional information or have any questions.
+ */
+ 
 #ifndef CPU_I386_H
 #define CPU_I386_H
 
 #include "config.h"
-#include "qemu-common.h"
 
 #ifdef TARGET_X86_64
 #define TARGET_LONG_BITS 64
@@ -41,8 +52,6 @@
 #else
 #define ELF_MACHINE	EM_386
 #endif
-
-#define CPUArchState struct CPUX86State
 
 #include "cpu-defs.h"
 
@@ -82,10 +91,9 @@
 #define DESC_AVL_MASK   (1 << 20)
 #define DESC_P_MASK     (1 << 15)
 #define DESC_DPL_SHIFT  13
-#define DESC_DPL_MASK   (3 << DESC_DPL_SHIFT)
+#define DESC_DPL_MASK   (1 << DESC_DPL_SHIFT)
 #define DESC_S_MASK     (1 << 12)
 #define DESC_TYPE_SHIFT 8
-#define DESC_TYPE_MASK  (15 << DESC_TYPE_SHIFT)
 #define DESC_A_MASK     (1 << 8)
 
 #define DESC_CS_MASK    (1 << 11) /* 1=code segment 0=data segment */
@@ -145,12 +153,11 @@
 #define HF_IOPL_SHIFT       12 /* must be same as eflags */
 #define HF_LMA_SHIFT        14 /* only used on x86_64: long mode active */
 #define HF_CS64_SHIFT       15 /* only used on x86_64: 64 bit code segment  */
-#define HF_RF_SHIFT         16 /* must be same as eflags */
+#define HF_OSFXSR_SHIFT     16 /* CR4.OSFXSR */
 #define HF_VM_SHIFT         17 /* must be same as eflags */
 #define HF_SMM_SHIFT        19 /* CPU in SMM mode */
 #define HF_SVME_SHIFT       20 /* SVME enabled (copy of EFER.SVME) */
 #define HF_SVMI_SHIFT       21 /* SVM intercepts are active */
-#define HF_OSFXSR_SHIFT     22 /* CR4.OSFXSR */
 
 #define HF_CPL_MASK          (3 << HF_CPL_SHIFT)
 #define HF_SOFTMMU_MASK      (1 << HF_SOFTMMU_SHIFT)
@@ -166,12 +173,11 @@
 #define HF_IOPL_MASK         (3 << HF_IOPL_SHIFT)
 #define HF_LMA_MASK          (1 << HF_LMA_SHIFT)
 #define HF_CS64_MASK         (1 << HF_CS64_SHIFT)
-#define HF_RF_MASK           (1 << HF_RF_SHIFT)
+#define HF_OSFXSR_MASK       (1 << HF_OSFXSR_SHIFT)
 #define HF_VM_MASK           (1 << HF_VM_SHIFT)
 #define HF_SMM_MASK          (1 << HF_SMM_SHIFT)
 #define HF_SVME_MASK         (1 << HF_SVME_SHIFT)
 #define HF_SVMI_MASK         (1 << HF_SVMI_SHIFT)
-#define HF_OSFXSR_MASK       (1 << HF_OSFXSR_SHIFT)
 
 /* hflags2 */
 
@@ -204,7 +210,6 @@
 #define CR4_DE_MASK   (1 << 3)
 #define CR4_PSE_MASK  (1 << 4)
 #define CR4_PAE_MASK  (1 << 5)
-#define CR4_MCE_MASK  (1 << 6)
 #define CR4_PGE_MASK  (1 << 7)
 #define CR4_PCE_MASK  (1 << 8)
 #define CR4_OSFXSR_SHIFT 9
@@ -241,7 +246,6 @@
 #define PG_DIRTY_MASK	 (1 << PG_DIRTY_BIT)
 #define PG_PSE_MASK	 (1 << PG_PSE_BIT)
 #define PG_GLOBAL_MASK	 (1 << PG_GLOBAL_BIT)
-#define PG_HI_USER_MASK  0x7ff0000000000000LL
 #define PG_NX_MASK	 (1LL << PG_NX_BIT)
 
 #define PG_ERROR_W_BIT     1
@@ -252,39 +256,11 @@
 #define PG_ERROR_RSVD_MASK 0x08
 #define PG_ERROR_I_D_MASK  0x10
 
-#define MCG_CTL_P	(1ULL<<8)   /* MCG_CAP register available */
-#define MCG_SER_P	(1ULL<<24) /* MCA recovery/new status bits */
-
-#define MCE_CAP_DEF	(MCG_CTL_P|MCG_SER_P)
-#define MCE_BANKS_DEF	10
-
-#define MCG_STATUS_RIPV	(1ULL<<0)   /* restart ip valid */
-#define MCG_STATUS_EIPV	(1ULL<<1)   /* ip points to correct instruction */
-#define MCG_STATUS_MCIP	(1ULL<<2)   /* machine check in progress */
-
-#define MCI_STATUS_VAL	(1ULL<<63)  /* valid error */
-#define MCI_STATUS_OVER	(1ULL<<62)  /* previous errors lost */
-#define MCI_STATUS_UC	(1ULL<<61)  /* uncorrected error */
-#define MCI_STATUS_EN	(1ULL<<60)  /* error enabled */
-#define MCI_STATUS_MISCV (1ULL<<59) /* misc error reg. valid */
-#define MCI_STATUS_ADDRV (1ULL<<58) /* addr reg. valid */
-#define MCI_STATUS_PCC	(1ULL<<57)  /* processor context corrupt */
-#define MCI_STATUS_S	(1ULL<<56)  /* Signaled machine check */
-#define MCI_STATUS_AR	(1ULL<<55)  /* Action required */
-
-/* MISC register defines */
-#define MCM_ADDR_SEGOFF	0	/* segment offset */
-#define MCM_ADDR_LINEAR	1	/* linear address */
-#define MCM_ADDR_PHYS	2	/* physical address */
-#define MCM_ADDR_MEM	3	/* memory address */
-#define MCM_ADDR_GENERIC 7	/* generic */
-
 #define MSR_IA32_TSC                    0x10
 #define MSR_IA32_APICBASE               0x1b
 #define MSR_IA32_APICBASE_BSP           (1<<8)
 #define MSR_IA32_APICBASE_ENABLE        (1<<11)
 #define MSR_IA32_APICBASE_BASE          (0xfffff<<12)
-#define MSR_IA32_TSCDEADLINE            0x6e0
 
 #define MSR_MTRRcap			0xfe
 #define MSR_MTRRcap_VCNT		8
@@ -300,10 +276,6 @@
 #define MSR_MCG_CTL                     0x17b
 
 #define MSR_IA32_PERF_STATUS            0x198
-
-#define MSR_IA32_MISC_ENABLE		0x1a0
-/* Indicates good rep/movs microcode on some processors: */
-#define MSR_IA32_MISC_ENABLE_DEFAULT    1
 
 #define MSR_MTRRphysBase(reg)		(0x200 + 2 * (reg))
 #define MSR_MTRRphysMask(reg)		(0x200 + 2 * (reg) + 1)
@@ -324,11 +296,6 @@
 
 #define MSR_MTRRdefType			0x2ff
 
-#define MSR_MC0_CTL			0x400
-#define MSR_MC0_STATUS			0x401
-#define MSR_MC0_ADDR			0x402
-#define MSR_MC0_MISC			0x403
-
 #define MSR_EFER                        0xc0000080
 
 #define MSR_EFER_SCE   (1 << 0)
@@ -345,7 +312,6 @@
 #define MSR_FSBASE                      0xc0000100
 #define MSR_GSBASE                      0xc0000101
 #define MSR_KERNELGSBASE                0xc0000102
-#define MSR_TSC_AUX                     0xc0000103
 
 #define MSR_VM_HSAVE_PA                 0xc0010117
 
@@ -402,7 +368,6 @@
 #define CPUID_EXT_POPCNT   (1 << 23)
 #define CPUID_EXT_XSAVE    (1 << 26)
 #define CPUID_EXT_OSXSAVE  (1 << 27)
-#define CPUID_EXT_HYPERVISOR  (1 << 31)
 
 #define CPUID_EXT2_SYSCALL (1 << 11)
 #define CPUID_EXT2_MP      (1 << 19)
@@ -428,28 +393,13 @@
 #define CPUID_EXT3_IBS     (1 << 10)
 #define CPUID_EXT3_SKINIT  (1 << 12)
 
-#define CPUID_SVM_NPT          (1 << 0)
-#define CPUID_SVM_LBRV         (1 << 1)
-#define CPUID_SVM_SVMLOCK      (1 << 2)
-#define CPUID_SVM_NRIPSAVE     (1 << 3)
-#define CPUID_SVM_TSCSCALE     (1 << 4)
-#define CPUID_SVM_VMCBCLEAN    (1 << 5)
-#define CPUID_SVM_FLUSHASID    (1 << 6)
-#define CPUID_SVM_DECODEASSIST (1 << 7)
-#define CPUID_SVM_PAUSEFILTER  (1 << 10)
-#define CPUID_SVM_PFTHRESHOLD  (1 << 12)
-
 #define CPUID_VENDOR_INTEL_1 0x756e6547 /* "Genu" */
 #define CPUID_VENDOR_INTEL_2 0x49656e69 /* "ineI" */
 #define CPUID_VENDOR_INTEL_3 0x6c65746e /* "ntel" */
 
 #define CPUID_VENDOR_AMD_1   0x68747541 /* "Auth" */
-#define CPUID_VENDOR_AMD_2   0x69746e65 /* "enti" */
+#define CPUID_VENDOR_AMD_2   0x69746e65 /* "enti" */ 
 #define CPUID_VENDOR_AMD_3   0x444d4163 /* "cAMD" */
-
-#define CPUID_VENDOR_VIA_1   0x746e6543 /* "Cent" */
-#define CPUID_VENDOR_VIA_2   0x48727561 /* "aurH" */
-#define CPUID_VENDOR_VIA_3   0x736c7561 /* "auls" */
 
 #define CPUID_MWAIT_IBE     (1 << 1) /* Interrupts can exit capability */
 #define CPUID_MWAIT_EMX     (1 << 0) /* enumeration supported */
@@ -475,16 +425,6 @@
 
 #define EXCP_SYSCALL    0x100 /* only happens in user only emulation
                                  for syscall instruction */
-
-/* i386-specific interrupt pending bits.  */
-#define CPU_INTERRUPT_SMI       CPU_INTERRUPT_TGT_EXT_2
-#define CPU_INTERRUPT_NMI       CPU_INTERRUPT_TGT_EXT_3
-#define CPU_INTERRUPT_MCE       CPU_INTERRUPT_TGT_EXT_4
-#define CPU_INTERRUPT_VIRQ      CPU_INTERRUPT_TGT_INT_0
-#define CPU_INTERRUPT_INIT      CPU_INTERRUPT_TGT_INT_1
-#define CPU_INTERRUPT_SIPI      CPU_INTERRUPT_TGT_INT_2
-#define CPU_INTERRUPT_TPR       CPU_INTERRUPT_TGT_INT_3
-
 
 enum {
     CC_OP_DYNAMIC, /* must use dynamic code to get cc_op */
@@ -552,6 +492,7 @@ typedef floatx80 CPU86_LDouble;
 #else
 typedef float64 CPU86_LDouble;
 #endif
+
 typedef struct SegmentCache {
     uint32_t selector;
     target_ulong base;
@@ -576,7 +517,7 @@ typedef union {
     uint64_t q;
 } MMXReg;
 
-#ifdef HOST_WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define XMM_B(n) _b[15 - (n)]
 #define XMM_W(n) _w[7 - (n)]
 #define XMM_L(n) _l[3 - (n)]
@@ -603,31 +544,13 @@ typedef union {
 #endif
 #define MMX_Q(n) q
 
-typedef union {
-    floatx80 d __attribute__((aligned(16)));
-    MMXReg mmx;
-} FPReg;
-
-typedef struct {
-    uint64_t base;
-    uint64_t mask;
-} MTRRVar;
-
-#define CPU_NB_REGS64 16
-#define CPU_NB_REGS32 8
-
 #ifdef TARGET_X86_64
-#define CPU_NB_REGS CPU_NB_REGS64
+#define CPU_NB_REGS 16
 #else
-#define CPU_NB_REGS CPU_NB_REGS32
+#define CPU_NB_REGS 8
 #endif
 
 #define NB_MMU_MODES 2
-
-typedef enum TPRAccess {
-    TPR_ACCESS_READ,
-    TPR_ACCESS_WRITE,
-} TPRAccess;
 
 typedef struct CPUX86State {
     /* standard registers */
@@ -654,22 +577,29 @@ typedef struct CPUX86State {
     SegmentCache idt; /* only base and limit are used */
 
     target_ulong cr[5]; /* NOTE: cr1 is unused */
-    int32_t a20_mask;
+    uint64_t a20_mask;
 
     /* FPU state */
     unsigned int fpstt; /* top of stack index */
-    uint16_t fpus;
-    uint16_t fpuc;
+    unsigned int fpus;
+    unsigned int fpuc;
     uint8_t fptags[8];   /* 0 = valid, 1 = empty */
-    FPReg fpregs[8];
-    /* KVM-only so far */
-    uint16_t fpop;
-    uint64_t fpip;
-    uint64_t fpdp;
+    union {
+#ifdef USE_X86LDOUBLE
+#ifndef _MSC_VER
+		CPU86_LDouble d __attribute__((aligned(16)));
+#else
+		__declspec(align(16)) CPU86_LDouble d;
+#endif
+#else
+        CPU86_LDouble d;
+#endif
+        MMXReg mmx;
+    } fpregs[8];
 
     /* emulator internal variables */
     float_status fp_status;
-    floatx80 ft0;
+    CPU86_LDouble ft0;
 
     float_status mmx_status; /* for 3DNow! float ops */
     float_status sse_status;
@@ -703,15 +633,10 @@ typedef struct CPUX86State {
     target_ulong fmask;
     target_ulong kernelgsbase;
 #endif
-    uint64_t system_time_msr;
-    uint64_t wall_clock_msr;
-    uint64_t async_pf_en_msr;
 
     uint64_t tsc;
-    uint64_t tsc_deadline;
 
-    uint64_t mcg_status;
-    uint64_t msr_ia32_misc_enable;
+    uint64_t pat;
 
     /* exception/interrupt handling */
     int error_code;
@@ -725,13 +650,7 @@ typedef struct CPUX86State {
     uint32_t smbase;
     int old_exception;  /* exception in flight */
 
-    /* KVM states, automatically cleared on reset */
-    uint8_t nmi_injected;
-    uint8_t nmi_pending;
-
     CPU_COMMON
-
-    uint64_t pat;
 
     /* processor features (e.g. for CPUID insn) */
     uint32_t cpuid_level;
@@ -746,62 +665,33 @@ typedef struct CPUX86State {
     uint32_t cpuid_ext2_features;
     uint32_t cpuid_ext3_features;
     uint32_t cpuid_apic_id;
-    int cpuid_vendor_override;
-    /* Store the results of Centaur's CPUID instructions */
-    uint32_t cpuid_xlevel2;
-    uint32_t cpuid_ext4_features;
-    /* Flags from CPUID[EAX=7,ECX=0].EBX */
-    uint32_t cpuid_7_0_ebx;
 
     /* MTRRs */
     uint64_t mtrr_fixed[11];
     uint64_t mtrr_deftype;
-    MTRRVar mtrr_var[8];
+    struct {
+        uint64_t base;
+        uint64_t mask;
+    } mtrr_var[8];
+
+#ifdef USE_KQEMU
+    int kqemu_enabled;
+    int last_io_time;
+#endif
 
     /* For KVM */
-    uint32_t mp_state;
-    int32_t exception_injected;
-    int32_t interrupt_injected;
-    uint8_t soft_interrupt;
-    uint8_t has_error_code;
-    uint32_t sipi_vector;
-    uint32_t cpuid_kvm_features;
-    uint32_t cpuid_svm_features;
-    bool tsc_valid;
-    int tsc_khz;
-    void *kvm_xsave_buf;
+    uint64_t interrupt_bitmap[256 / 64];
 
     /* in order to simplify APIC support, we leave this pointer to the
        user */
-    struct DeviceState *apic_state;
-
-    uint64_t mcg_cap;
-    uint64_t mcg_ctl;
-    uint64_t mce_banks[MCE_BANKS_DEF*4];
-
-    uint64_t tsc_aux;
-
-    /* vmstate */
-    uint16_t fpus_vmstate;
-    uint16_t fptag_vmstate;
-    uint16_t fpregs_format_vmstate;
-
-    uint64_t xstate_bv;
-    XMMReg ymmh_regs[CPU_NB_REGS];
-
-    uint64_t xcr0;
-
-    TPRAccess tpr_access_type;
+    struct APICState *apic_state;
 } CPUX86State;
 
-#include "cpu-qom.h"
-
-X86CPU *cpu_x86_init(const char *cpu_model);
+CPUX86State *cpu_x86_init(const char *cpu_model);
 int cpu_x86_exec(CPUX86State *s);
-void x86_cpu_list (FILE *f, fprintf_function cpu_fprintf, const char *optarg);
-void x86_cpudef_setup(void);
-int cpu_x86_support_mca_broadcast(CPUX86State *env);
-
+void cpu_x86_close(CPUX86State *s);
+void x86_cpu_list (FILE *f, int (*cpu_fprintf)(FILE *f, const char *fmt,
+                                                 ...));
 int cpu_get_pic_interrupt(CPUX86State *s);
 /* MSDOS compatibility mode FPU exception support */
 void cpu_set_ferr(CPUX86State *s);
@@ -865,21 +755,6 @@ static inline void cpu_x86_load_seg_cache(CPUX86State *env,
     }
 }
 
-static inline void cpu_x86_load_seg_cache_sipi(CPUX86State *env,
-                                               int sipi_vector)
-{
-    env->eip = 0;
-    cpu_x86_load_seg_cache(env, R_CS, sipi_vector << 8,
-                           sipi_vector << 12,
-                           env->segs[R_CS].limit,
-                           env->segs[R_CS].flags);
-    env->halted = 0;
-}
-
-int cpu_x86_get_descr_debug(CPUX86State *env, unsigned int selector,
-                            target_ulong *base, unsigned int *limit,
-                            unsigned int *flags);
-
 /* wrapper, just in case memory mappings must be changed */
 static inline void cpu_x86_set_cpl(CPUX86State *s, int cpl)
 {
@@ -892,8 +767,8 @@ static inline void cpu_x86_set_cpl(CPUX86State *s, int cpl)
 
 /* op_helper.c */
 /* used for debug or cpu save/restore */
-void cpu_get_fp80(uint64_t *pmant, uint16_t *pexp, floatx80 f);
-floatx80 cpu_set_fp80(uint64_t mant, uint16_t upper);
+void cpu_get_fp80(uint64_t *pmant, uint16_t *pexp, CPU86_LDouble f);
+CPU86_LDouble cpu_set_fp80(uint64_t mant, uint16_t upper);
 
 /* cpu-exec.c */
 /* the following helpers are only usable in user mode simulation as
@@ -908,20 +783,13 @@ void cpu_x86_frstor(CPUX86State *s, target_ulong ptr, int data32);
 int cpu_x86_signal_handler(int host_signum, void *pinfo,
                            void *puc);
 
-/* cpuid.c */
+/* helper.c */
+int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
+                             int is_write, int mmu_idx, int is_softmmu);
+void cpu_x86_set_a20(CPUX86State *env, int a20_state);
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                    uint32_t *eax, uint32_t *ebx,
                    uint32_t *ecx, uint32_t *edx);
-int cpu_x86_register(X86CPU *cpu, const char *cpu_model);
-void cpu_clear_apic_feature(CPUX86State *env);
-void host_cpuid(uint32_t function, uint32_t count,
-                uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
-
-/* helper.c */
-int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
-                             int is_write, int mmu_idx);
-#define cpu_handle_mmu_fault cpu_x86_handle_mmu_fault
-void cpu_x86_set_a20(CPUX86State *env, int a20_state);
 
 static inline int hw_breakpoint_enabled(unsigned long dr7, int index)
 {
@@ -930,12 +798,12 @@ static inline int hw_breakpoint_enabled(unsigned long dr7, int index)
 
 static inline int hw_breakpoint_type(unsigned long dr7, int index)
 {
-    return (dr7 >> (DR7_TYPE_SHIFT + (index * 4))) & 3;
+    return (dr7 >> (DR7_TYPE_SHIFT + (index * 2))) & 3;
 }
 
 static inline int hw_breakpoint_len(unsigned long dr7, int index)
 {
-    int len = ((dr7 >> (DR7_LEN_SHIFT + (index * 4))) & 3);
+    int len = ((dr7 >> (DR7_LEN_SHIFT + (index * 2))) & 3);
     return (len == 2) ? 8 : len + 1;
 }
 
@@ -948,6 +816,14 @@ void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
 
+/* hw/apic.c */
+void cpu_set_apic_base(CPUX86State *env, uint64_t val);
+uint64_t cpu_get_apic_base(CPUX86State *env);
+void cpu_set_apic_tpr(CPUX86State *env, uint8_t val);
+#ifndef NO_CPU_IO_DEFS
+uint8_t cpu_get_apic_tpr(CPUX86State *env);
+#endif
+
 /* hw/pc.c */
 void cpu_smm_update(CPUX86State *env);
 uint64_t cpu_get_tsc(CPUX86State *env);
@@ -956,80 +832,45 @@ uint64_t cpu_get_tsc(CPUX86State *env);
 #define X86_DUMP_FPU  0x0001 /* dump FPU state too */
 #define X86_DUMP_CCOP 0x0002 /* dump qemu flag cache */
 
-#define TARGET_PAGE_BITS 12
-
-#ifdef TARGET_X86_64
-#define TARGET_PHYS_ADDR_SPACE_BITS 52
-/* ??? This is really 48 bits, sign-extended, but the only thing
-   accessible to userland with bit 48 set is the VSYSCALL, and that
-   is handled via other mechanisms.  */
-#define TARGET_VIRT_ADDR_SPACE_BITS 47
-#else
-#define TARGET_PHYS_ADDR_SPACE_BITS 36
-#define TARGET_VIRT_ADDR_SPACE_BITS 32
+#ifdef USE_KQEMU
+static inline int cpu_get_time_fast(void)
+{
+    int low, high;
+    asm volatile("rdtsc" : "=a" (low), "=d" (high));
+    return low;
+}
 #endif
 
-static inline CPUX86State *cpu_init(const char *cpu_model)
-{
-    X86CPU *cpu = cpu_x86_init(cpu_model);
-    if (cpu == NULL) {
-        return NULL;
-    }
-    return &cpu->env;
-}
+#define TARGET_PAGE_BITS 12
 
+#define CPUState CPUX86State
+#define cpu_init cpu_x86_init
 #define cpu_exec cpu_x86_exec
 #define cpu_gen_code cpu_x86_gen_code
 #define cpu_signal_handler cpu_x86_signal_handler
-#define cpu_list_id x86_cpu_list
-#define cpudef_setup	x86_cpudef_setup
+#define cpu_list x86_cpu_list
 
-#define CPU_SAVE_VERSION 12
+#define CPU_SAVE_VERSION 8
 
 /* MMU modes definitions */
 #define MMU_MODE0_SUFFIX _kernel
 #define MMU_MODE1_SUFFIX _user
 #define MMU_USER_IDX 1
-static inline int cpu_mmu_index (CPUX86State *env)
+static inline int cpu_mmu_index (CPUState *env)
 {
     return (env->hflags & HF_CPL_MASK) == 3 ? 1 : 0;
 }
 
-#undef EAX
-#define EAX (env->regs[R_EAX])
-#undef ECX
-#define ECX (env->regs[R_ECX])
-#undef EDX
-#define EDX (env->regs[R_EDX])
-#undef EBX
-#define EBX (env->regs[R_EBX])
-#undef ESP
-#define ESP (env->regs[R_ESP])
-#undef EBP
-#define EBP (env->regs[R_EBP])
-#undef ESI
-#define ESI (env->regs[R_ESI])
-#undef EDI
-#define EDI (env->regs[R_EDI])
-#undef EIP
-#define EIP (env->eip)
-#define DF  (env->df)
-
-#define CC_SRC (env->cc_src)
-#define CC_DST (env->cc_dst)
-#define CC_OP  (env->cc_op)
-
-/* float macros */
-#define FT0    (env->ft0)
-#define ST0    (env->fpregs[env->fpstt].d)
-#define ST(n)  (env->fpregs[(env->fpstt + (n)) & 7].d)
-#define ST1    ST(1)
-
 /* translate.c */
 void optimize_flags_init(void);
 
+typedef struct CCTable {
+    int (*compute_all)(void); /* return all the flags */
+    int (*compute_c)(void);  /* return the C flag */
+} CCTable;
+
 #if defined(CONFIG_USER_ONLY)
-static inline void cpu_clone_regs(CPUX86State *env, target_ulong newsp)
+static inline void cpu_clone_regs(CPUState *env, target_ulong newsp)
 {
     if (newsp)
         env->regs[R_ESP] = newsp;
@@ -1038,61 +879,21 @@ static inline void cpu_clone_regs(CPUX86State *env, target_ulong newsp)
 #endif
 
 #include "cpu-all.h"
-#include "svm.h"
-
-#if !defined(CONFIG_USER_ONLY)
-#include "hw/apic.h"
-#endif
-
-static inline bool cpu_has_work(CPUX86State *env)
-{
-    return ((env->interrupt_request & CPU_INTERRUPT_HARD) &&
-            (env->eflags & IF_MASK)) ||
-           (env->interrupt_request & (CPU_INTERRUPT_NMI |
-                                      CPU_INTERRUPT_INIT |
-                                      CPU_INTERRUPT_SIPI |
-                                      CPU_INTERRUPT_MCE));
-}
-
 #include "exec-all.h"
 
-static inline void cpu_pc_from_tb(CPUX86State *env, TranslationBlock *tb)
+#include "svm.h"
+
+static inline void cpu_pc_from_tb(CPUState *env, TranslationBlock *tb)
 {
     env->eip = tb->pc - tb->cs_base;
 }
 
-static inline void cpu_get_tb_cpu_state(CPUX86State *env, target_ulong *pc,
+static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
                                         target_ulong *cs_base, int *flags)
 {
     *cs_base = env->segs[R_CS].base;
     *pc = *cs_base + env->eip;
-    *flags = env->hflags |
-        (env->eflags & (IOPL_MASK | TF_MASK | RF_MASK | VM_MASK));
+    *flags = env->hflags | (env->eflags & (IOPL_MASK | TF_MASK | VM_MASK));
 }
-
-void do_cpu_init(X86CPU *cpu);
-void do_cpu_sipi(X86CPU *cpu);
-
-#define MCE_INJECT_BROADCAST    1
-#define MCE_INJECT_UNCOND_AO    2
-
-void cpu_x86_inject_mce(Monitor *mon, CPUX86State *cenv, int bank,
-                        uint64_t status, uint64_t mcg_status, uint64_t addr,
-                        uint64_t misc, int flags);
-
-/* op_helper.c */
-void do_interrupt(CPUX86State *env);
-void do_interrupt_x86_hardirq(CPUX86State *env, int intno, int is_hw);
-void QEMU_NORETURN raise_exception_env(int exception_index, CPUX86State *nenv);
-void QEMU_NORETURN raise_exception_err_env(CPUX86State *nenv, int exception_index,
-                                           int error_code);
-
-void do_smm_enter(CPUX86State *env1);
-
-void svm_check_intercept(CPUX86State *env1, uint32_t type);
-
-uint32_t cpu_cc_compute_all(CPUX86State *env1, int op);
-
-void cpu_report_tpr_access(CPUX86State *env, TPRAccess access);
 
 #endif /* CPU_I386_H */

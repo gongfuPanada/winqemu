@@ -96,11 +96,15 @@ typedef void * host_reg_t;
 #ifdef _BSD
 typedef struct __sFILE FILE;
 #else
+#ifndef _MSC_VER
 typedef struct FILE FILE;
 #endif
+#endif
+#ifndef _MSC_VER
 extern int fprintf(FILE *, const char *, ...);
 extern int fputs(const char *, FILE *);
 extern int printf(const char *, ...);
+#endif
 #undef NULL
 #define NULL 0
 
